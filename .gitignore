@@ -1,0 +1,12 @@
+venv
+*.synctex.gz
+*.pdf
+*.log
+*.aux
+*.out
+*.toc
+*.bbl
+*.blg
+*.fdb_latexmk
+*.xdv
+report/_minted-report/
