@@ -1,7 +1,6 @@
 import pynusmv
 import sys
 from pynusmv_lower_interface.nusmv.parser import parser 
-from collections import deque
 
 specTypes = {'LTLSPEC': parser.TOK_LTLSPEC, 'CONTEXT': parser.CONTEXT,
     'IMPLIES': parser.IMPLIES, 'IFF': parser.IFF, 'OR': parser.OR, 'XOR': parser.XOR, 'XNOR': parser.XNOR,
@@ -25,7 +24,7 @@ def spec_to_bdd(model, spec):
     """
     bddspec = pynusmv.mc.eval_simple_expression(model, str(spec))
     return bddspec
-    
+
 def is_boolean_formula(spec):
     """
     Given a formula `spec`, checks if the formula is a boolean combination of base
@@ -87,15 +86,76 @@ def parse_react(spec):
         return None
     return (f_formula, g_formula)
 
+def find_reach(Init):
+    model = pynusmv.glob.prop_database().master.bddFsm
+
+    New = Init
+    Reach = Init
+    while not New.is_false():
+        New = model.post(New) - Reach
+        Reach = Reach + New
+    return Reach
+
+
 def check_react_spec(spec):
     """
     Return whether the loaded SMV model satisfies or not the GR(1) formula
     `spec`, that is, whether all executions of the model satisfies `spec`
     or not. 
     """
-    if parse_react(spec) == None:
+
+    model = pynusmv.glob.prop_database().master.bddFsm
+    res = parse_react(spec)
+    if res == None:
         return None
-    return pynusmv.mc.check_explain_ltl_spec(spec)
+    F = spec_to_bdd(model, res[0])
+    G = spec_to_bdd(model, res[1])
+
+    Reach = find_reach(model.init)                            # trovare reach
+    F = (F & Reach) - G
+
+    '''
+    Recur := Intersect(Reach, F) // Potential candidates for cycle
+    while not IsEmpty(Recur) do // Iterate on Recur_i
+        PreReach := empty // States that can reach Recur_i in ≥ 1 steps
+        New := Pre(Recur, Trans) // Ensure at least one transition
+        while not IsEmpty(New) do
+            PreReach := Union(PreReach, New)
+            if IsSubset(Recur, PreReach) then
+                return True // Recur won't change: F repeatable
+            end if
+            New := Diff(Diff(Pre(New, Trans), PreReach), G)
+        end while
+        Recur := Intersect(Recur, PreReach) // Recur_i+1
+    end while
+    return False // No execution with F repeating
+    '''
+
+    # a + b and a | b compute the disjunction of a and b
+    # a * b and a & b compute the conjunction of a and b
+    # ~a and -a compute the negation of a
+    # a - b computes a & ~b
+    # a ^ b computes the exclusive-OR (XOR) of a and b
+    # a == b, a <= b, a < b, a > b and a >= b compare a and b
+
+    Recur = Reach & F                       # Potential candidates for cycle
+    while not Recur.is_false():             # Iterate on Recur_i
+        # This is what we would like to do
+        PreReach = pynusmv.dd.BDD.false()   # States that can reach Recur_i in ≥ 1 steps
+        
+        New = model.pre(Recur)              # Ensure at least one transition
+        while not New.is_false():
+            PreReach = PreReach | New
+            assert ((Recur <= PreReach) == Recur.entailed(PreReach))
+            assert ((Recur <= PreReach) == ((Recur & PreReach) == Recur))
+            if Recur <= PreReach:
+                return True, None                 # Recur won't change: F repeatable
+            
+            New = (model.pre(New) - PreReach) - G
+        
+        Recur = Recur & PreReach # Recur_i+1
+    
+    return False, None # No execution with F repeating
 
 if len(sys.argv) != 2:
     print("Usage:", sys.argv[0], "filename.smv")

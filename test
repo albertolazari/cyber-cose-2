@@ -1,0 +1,2 @@
+/usr/local/bin/python3 react_mc.py $* > our.out
+/usr/local/bin/python3 react_mc_original.py $* > original.out
