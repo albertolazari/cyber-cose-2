@@ -138,7 +138,7 @@ def check_react_spec(spec):
     # a ^ b computes the exclusive-OR (XOR) of a and b
     # a == b, a <= b, a < b, a > b and a >= b compare a and b
 
-    Recur = Reach & F                       # Potential candidates for cycle
+    Recur = F                               # Potential candidates for cycle
     while not Recur.is_false():             # Iterate on Recur_i
         # This is what we would like to do
         PreReach = pynusmv.dd.BDD.false()   # States that can reach Recur_i in ≥ 1 steps
@@ -149,13 +149,13 @@ def check_react_spec(spec):
             assert ((Recur <= PreReach) == Recur.entailed(PreReach))
             assert ((Recur <= PreReach) == ((Recur & PreReach) == Recur))
             if Recur <= PreReach:
-                return True, None                 # Recur won't change: F repeatable
+                return False, None                 # Recur won't change: F repeatable
             
             New = (model.pre(New) - PreReach) - G
         
         Recur = Recur & PreReach # Recur_i+1
     
-    return False, None # No execution with F repeating
+    return True, None # No execution with F repeating
 
 if len(sys.argv) != 2:
     print("Usage:", sys.argv[0], "filename.smv")
