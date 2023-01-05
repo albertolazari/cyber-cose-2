@@ -1,6 +1,7 @@
 import pynusmv
 import sys
 from pynusmv_lower_interface.nusmv.parser import parser 
+from collections import deque
 
 specTypes = {'LTLSPEC': parser.TOK_LTLSPEC, 'CONTEXT': parser.CONTEXT,
     'IMPLIES': parser.IMPLIES, 'IFF': parser.IFF, 'OR': parser.OR, 'XOR': parser.XOR, 'XNOR': parser.XNOR,

@@ -4,18 +4,18 @@ MODULE main
         press   : boolean;
     VAR
         mode    : {on, off};
-        x       : 0..5;
+        x       : 0..15;
     ASSIGN
         init(mode) := off;
         next(mode) := case
             mode = off & press              : on;
-            mode = on & (press | x >= 3)   : off;
+            mode = on & (press | x >= 10)   : off;
             TRUE                            : mode;
         esac;
         init(x) := 0;
         next(x) := case
-            mode = on & (press | x >= 3)   : 0;
-            mode = on & x < 3              : x + 1;
+            mode = on & (press | x >= 10)   : 0;
+            mode = on & x < 10              : x + 1;
             TRUE                            : x;
         esac;
         
