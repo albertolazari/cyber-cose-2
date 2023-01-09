@@ -97,6 +97,8 @@ def find_reach(Init):
         Reach = Reach + New
     return Reach
 
+def create_trace(model, Recur, G):
+# boh
 
 def check_react_spec(spec):
     """
@@ -150,7 +152,7 @@ def check_react_spec(spec):
             # assert ((Recur <= PreReach) == Recur.entailed(PreReach))
             # assert ((Recur <= PreReach) == ((Recur & PreReach) == Recur))
             if Recur <= PreReach:
-                return False, None                 # Recur won't change: F repeatable
+                return False, create_trace(model, Recur, G)                 # Recur won't change: F repeatable
  
             New = (model.pre(New) - G) - PreReach
         
