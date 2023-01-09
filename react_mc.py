@@ -144,7 +144,7 @@ def check_react_spec(spec):
         # This is what we would like to do
         PreReach = pynusmv.dd.BDD.false()   # States that can reach Recur_i in ≥ 1 steps
         
-        New = model.pre(Recur)              # Ensure at least one transition
+        New = model.pre(Recur) - G              # Ensure at least one transition
         while not New.is_false():
             PreReach = PreReach | New
             assert ((Recur <= PreReach) == Recur.entailed(PreReach))
@@ -152,7 +152,7 @@ def check_react_spec(spec):
             if Recur <= PreReach:
                 return False, None                 # Recur won't change: F repeatable
             
-            New = (model.pre(New) - PreReach) - G
+            New = (model.pre(New) - G) - PreReach
         
         Recur = Recur & PreReach # Recur_i+1
     
