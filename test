@@ -1,8 +1,16 @@
-echo "$*" >> our.out
-echo "$*" >> original.out
+rm *.out
 
-/usr/local/bin/python3 react_mc.py $* >> our.out
-/usr/local/bin/python3 react_mc_original.py $* >> original.out
+for ex in react_examples/*
+do
+	for out in {our,original}.out
+	do
+		echo $(basename $ex) >> $out
+		echo '======================================================' >> $out
 
-echo "" >> our.out
-echo "" >> original.out
+		${1:-python3} react_mc_${out/.out/}.py $ex | grep -v 'Counterexample' >> $out
+
+		echo '' >> $out
+	done
+done
+
+[[ $(diff -u our.out original.out) ]] && echo No || echo Ok
