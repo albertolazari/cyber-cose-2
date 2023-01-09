@@ -97,8 +97,10 @@ def find_reach(Init):
         Reach = Reach + New
     return Reach
 
-def create_trace(model, Recur, G):
-# boh
+def create_trace(model, loop_trace):
+    return None
+
+    
 
 def check_react_spec(spec):
     """
@@ -147,14 +149,17 @@ def check_react_spec(spec):
         PreReach = pynusmv.dd.BDD.false()   # States that can reach Recur_i in ≥ 1 steps
  
         New = model.pre(Recur) - G              # Ensure at least one transition
+        loop_trace = [New]
+ 
         while not New.is_false():
             PreReach = PreReach | New
             # assert ((Recur <= PreReach) == Recur.entailed(PreReach))
             # assert ((Recur <= PreReach) == ((Recur & PreReach) == Recur))
             if Recur <= PreReach:
-                return False, create_trace(model, Recur, G)                 # Recur won't change: F repeatable
+                return False, create_trace(model, loop_trace)                 # Recur won't change: F repeatable
  
             New = (model.pre(New) - G) - PreReach
+            loop_trace.append(New)
         
         Recur = Recur & PreReach # Recur_i+1
     
