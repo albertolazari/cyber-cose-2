@@ -97,10 +97,8 @@ def find_reach(Init):
         Reach = Reach + New
     return Reach
 
-def create_trace(model, loop_trace):
-    return None
-
-
+def create_trace(Recur):
+    Recur.pick_one_state()
 
 def check_react_spec(spec):
     """
@@ -156,7 +154,7 @@ def check_react_spec(spec):
             # assert ((Recur <= PreReach) == Recur.entailed(PreReach))
             # assert ((Recur <= PreReach) == ((Recur & PreReach) == Recur))
             if Recur <= PreReach:
-                return False, create_trace(model, loop_trace)                 # Recur won't change: F repeatable
+                return False, create_trace(Recur)                 # Recur won't change: F repeatable
 
             New = (model.pre(New) - G) - PreReach
             loop_trace.append(New)
