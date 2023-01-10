@@ -87,6 +87,7 @@ def parse_react(spec):
         return None
     return (f_formula, g_formula)
 
+
 def post_reach(R):
     model = pynusmv.glob.prop_database().master.bddFsm
 
@@ -96,6 +97,7 @@ def post_reach(R):
         New = model.post(New) - Reach
         Reach = Reach + New
     return Reach
+
 
 def desimbolify(sym_trace: List[pynusmv.dd.BDD]) -> List[pynusmv.dd.State]:
     """
@@ -113,7 +115,7 @@ def desimbolify(sym_trace: List[pynusmv.dd.BDD]) -> List[pynusmv.dd.State]:
 
     sym_trace[-1] = sym_trace[-1] & model.pre(target)
 
-    trace = desimbolify(model, sym_trace)
+    trace = desimbolify(sym_trace)
     trace.append(target)
     return trace
     
@@ -133,6 +135,7 @@ def loop_interno(s: pynusmv.dd.State, G: pynusmv.dd.BDD , Recur: pynusmv.dd.BDD)
     regions_trace[-1] = regions_trace[-1] & Recur
     return desimbolify(regions_trace)
 
+
 def loop_esterno(Recur, G):
     model = pynusmv.glob.prop_database().master.bddFsm
     s = model.pick_one_state(Recur)
@@ -144,30 +147,47 @@ def loop_esterno(Recur, G):
     trace.append(t)
     return trace # TODO: ritorna a partire da t
 
+
 def boh(s):
     model = pynusmv.glob.prop_database().master.bddFsm
     init = model.init
 
     new = model.pre(s)
     reach = new
-    trace = [new, s]
+    trace = [s]
     while not new.intersected(init):
+        trace = [new] + trace
         new = model.pre(new) - reach
         reach = reach + new
-        trace = [new] + trace
+    trace = [new & init] + trace
     return desimbolify(trace)
+
+
 
 def create_trace(Recur : pynusmv.dd.BDD, G):
     model = pynusmv.glob.prop_database().master.bddFsm
-    s = model.pick_one_state(Recur)
 
     trace = loop_esterno(Recur, G)
-
-
-
+    trace = boh(trace[-1])[:-1] + trace
+    
     return trace
 
 
+def create_trace_inputs(model: pynusmv.fsm.BddFsm, trace: List[pynusmv.dd.State]):
+    """
+    Return a tuple of dict which corresponds to the states in the given trace associated with their inputs
+    """
+    prev = None
+    full_trace = []
+
+    for state in trace:
+        if prev is not None:
+            input = model.get_inputs_between_states(prev, state)
+            full_trace.append(model.pick_one_inputs(input).get_str_values())
+        full_trace.append(state.get_str_values())
+        prev = state
+
+    return tuple(full_trace)
 
 
 def check_react_spec(spec):
@@ -224,7 +244,9 @@ def check_react_spec(spec):
             # assert ((Recur <= PreReach) == Recur.entailed(PreReach))
             # assert ((Recur <= PreReach) == ((Recur & PreReach) == Recur))
             if Recur <= PreReach:
-                return False, create_trace(Recur, G)                 # Recur won't change: F repeatable
+                trace = create_trace(Recur, G)
+                full_trace = create_trace_inputs(model, trace)
+                return False, full_trace                 # Recur won't change: F repeatable
 
             New = (model.pre(New) - G) - PreReach
             loop_trace.append(New)
