@@ -1,7 +1,7 @@
+from typing import List
 import pynusmv
 import sys
 from pynusmv_lower_interface.nusmv.parser import parser
-from collections import deque
 
 specTypes = {'LTLSPEC': parser.TOK_LTLSPEC, 'CONTEXT': parser.CONTEXT,
     'IMPLIES': parser.IMPLIES, 'IFF': parser.IFF, 'OR': parser.OR, 'XOR': parser.XOR, 'XNOR': parser.XNOR,
@@ -87,18 +87,88 @@ def parse_react(spec):
         return None
     return (f_formula, g_formula)
 
-def find_reach(Init):
+def post_reach(R):
     model = pynusmv.glob.prop_database().master.bddFsm
 
-    New = Init
-    Reach = Init
+    New = R
+    Reach = R
     while not New.is_false():
         New = model.post(New) - Reach
         Reach = Reach + New
     return Reach
 
-def create_trace(Recur):
-    Recur.pick_one_state()
+def desimbolify(sym_trace: List[pynusmv.dd.BDD]) -> List[pynusmv.dd.State]:
+    """
+    Return a list of states which corresponds to the trace
+    """
+    model = pynusmv.glob.prop_database().master.bddFsm
+    if len(sym_trace) == 0:
+        return []
+
+    if len(sym_trace) == 1:
+        return [model.pick_one_state(sym_trace[0])]
+
+    sym_target = sym_trace.pop()
+    target = model.pick_one_state(sym_target)
+
+    sym_trace[-1] = sym_trace[-1] & model.pre(target)
+
+    trace = desimbolify(model, sym_trace)
+    trace.append(target)
+    return trace
+    
+
+def loop_interno(s: pynusmv.dd.State, G: pynusmv.dd.BDD , Recur: pynusmv.dd.BDD) -> List[pynusmv.dd.State]:
+    """
+    Return a list of consecutive states starting in s and ending in Recur. Avoids G.
+    """
+    model = pynusmv.glob.prop_database().master.bddFsm
+    new = model.post(s) - G
+    regions_trace = [s, new]
+    reach = new
+    while not new.intersected(Recur):
+        new = model.post(new) - reach - G
+        regions_trace.append(new)
+        reach = reach + new
+    regions_trace[-1] = regions_trace[-1] & Recur
+    return desimbolify(regions_trace)
+
+def loop_esterno(Recur, G):
+    model = pynusmv.glob.prop_database().master.bddFsm
+    s = model.pick_one_state(Recur)
+    trace = loop_interno(s, G, Recur)
+    t = trace.pop()
+    while t not in trace:
+        trace = trace + loop_interno(t, G, Recur)
+        t = trace.pop()
+    trace.append(t)
+    return trace # TODO: ritorna a partire da t
+
+def boh(s):
+    model = pynusmv.glob.prop_database().master.bddFsm
+    init = model.init
+
+    new = model.pre(s)
+    reach = new
+    trace = [new, s]
+    while not new.intersected(init):
+        new = model.pre(new) - reach
+        reach = reach + new
+        trace = [new] + trace
+    return desimbolify(trace)
+
+def create_trace(Recur : pynusmv.dd.BDD, G):
+    model = pynusmv.glob.prop_database().master.bddFsm
+    s = model.pick_one_state(Recur)
+
+    trace = loop_esterno(Recur, G)
+
+
+
+    return trace
+
+
+
 
 def check_react_spec(spec):
     """
@@ -114,7 +184,7 @@ def check_react_spec(spec):
     F = spec_to_bdd(model, res[0])
     G = spec_to_bdd(model, res[1])
 
-    Reach = find_reach(model.init)                            # trovare reach
+    Reach = post_reach(model.init)                            # trovare reach
     F = (F & Reach) - G
 
     '''
@@ -154,7 +224,7 @@ def check_react_spec(spec):
             # assert ((Recur <= PreReach) == Recur.entailed(PreReach))
             # assert ((Recur <= PreReach) == ((Recur & PreReach) == Recur))
             if Recur <= PreReach:
-                return False, create_trace(Recur)                 # Recur won't change: F repeatable
+                return False, create_trace(Recur, G)                 # Recur won't change: F repeatable
 
             New = (model.pre(New) - G) - PreReach
             loop_trace.append(New)
