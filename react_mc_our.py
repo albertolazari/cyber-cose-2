@@ -1,6 +1,6 @@
 import pynusmv
 import sys
-from pynusmv_lower_interface.nusmv.parser import parser 
+from pynusmv_lower_interface.nusmv.parser import parser
 from collections import deque
 
 specTypes = {'LTLSPEC': parser.TOK_LTLSPEC, 'CONTEXT': parser.CONTEXT,
@@ -29,7 +29,7 @@ def spec_to_bdd(model, spec):
 def is_boolean_formula(spec):
     """
     Given a formula `spec`, checks if the formula is a boolean combination of base
-    formulas with no temporal operators. 
+    formulas with no temporal operators.
     """
     if spec.type in basicTypes:
         return True
@@ -38,12 +38,12 @@ def is_boolean_formula(spec):
     if spec.type in booleanOp:
         return is_boolean_formula(spec.car) and is_boolean_formula(spec.cdr)
     return False
-    
+
 def check_GF_formula(spec):
     """
-    Given a formula `spec` checks if the formula is of the form GF f, where f is a 
+    Given a formula `spec` checks if the formula is of the form GF f, where f is a
     boolean combination of base formulas with no temporal operators.
-    Returns the formula f if `spec` is in the correct form, None otherwise 
+    Returns the formula f if `spec` is in the correct form, None otherwise
     """
     # check if formula is of type GF f_i
     if spec.type != specTypes['OP_GLOBAL']:
@@ -60,13 +60,13 @@ def parse_react(spec):
     """
     Visit the syntactic tree of the formula `spec` to check if it is a reactive formula,
     that is wether the formula is of the form
-    
+
                     GF f -> GF g
-    
+
     where f and g are boolean combination of basic formulas.
-    
-    If `spec` is a reactive formula, the result is a pair where the first element is the 
-    formula f and the second element is the formula g. If `spec` is not a reactive 
+
+    If `spec` is a reactive formula, the result is a pair where the first element is the
+    formula f and the second element is the formula g. If `spec` is not a reactive
     formula, then the result is None.
     """
     # the root of a spec should be of type CONTEXT
@@ -100,13 +100,13 @@ def find_reach(Init):
 def create_trace(model, loop_trace):
     return None
 
-    
+
 
 def check_react_spec(spec):
     """
     Return whether the loaded SMV model satisfies or not the GR(1) formula
     `spec`, that is, whether all executions of the model satisfies `spec`
-    or not. 
+    or not.
     """
 
     model = pynusmv.glob.prop_database().master.bddFsm
@@ -147,22 +147,22 @@ def check_react_spec(spec):
     while not Recur.is_false():             # Iterate on Recur_i
         # This is what we would like to do
         PreReach = pynusmv.dd.BDD.false()   # States that can reach Recur_i in ≥ 1 steps
- 
+
         New = model.pre(Recur) - G              # Ensure at least one transition
         loop_trace = [New]
- 
+
         while not New.is_false():
             PreReach = PreReach | New
             # assert ((Recur <= PreReach) == Recur.entailed(PreReach))
             # assert ((Recur <= PreReach) == ((Recur & PreReach) == Recur))
             if Recur <= PreReach:
                 return False, create_trace(model, loop_trace)                 # Recur won't change: F repeatable
- 
+
             New = (model.pre(New) - G) - PreReach
             loop_trace.append(New)
-        
+
         Recur = Recur & PreReach # Recur_i+1
-    
+
     return True, None # No execution with F repeating
 
 if len(sys.argv) != 2:
