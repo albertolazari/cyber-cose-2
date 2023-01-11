@@ -152,14 +152,14 @@ def boh(s):
     model = pynusmv.glob.prop_database().master.bddFsm
     init = model.init
 
-    new = model.pre(s)
-    reach = new
-    trace = [s]
-    while not new.intersected(init):
-        trace = [new] + trace
-        new = model.pre(new) - reach
-        reach = reach + new
-    trace = [new & init] + trace
+    New = init
+    Reach = init
+    trace = [New]
+    while not s.intersected(New):
+        New = model.post(New) - Reach
+        Reach = Reach + New
+        trace.append(New)
+    trace[-1] = s & New
     return desimbolify(trace)
 
 
@@ -183,7 +183,8 @@ def create_trace_inputs(model: pynusmv.fsm.BddFsm, trace: List[pynusmv.dd.State]
     for state in trace:
         if prev is not None:
             input = model.get_inputs_between_states(prev, state)
-            full_trace.append(model.pick_one_inputs(input).get_str_values())
+            s = model.pick_one_inputs(input).get_str_values() if not input.is_false() else {}
+            full_trace.append(s)
         full_trace.append(state.get_str_values())
         prev = state
 
