@@ -101,7 +101,6 @@ def desimbolify(model: pynusmv.fsm.BddFsm, sym_trace: List[pynusmv.dd.BDD]) -> L
     """
     Return a list of states which corresponds to the trace
     """
-    # model = pynusmv.glob.prop_database().master.bddFsm
     if len(sym_trace) == 0:
         return []
 
