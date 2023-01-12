@@ -88,9 +88,7 @@ def parse_react(spec):
     return (f_formula, g_formula)
 
 
-def post_reach(R):
-    model = pynusmv.glob.prop_database().master.bddFsm
-
+def post_reach(model: pynusmv.fsm.BddFsm, R: pynusmv.dd.BDD) -> pynusmv.dd.BDD:
     New = R
     Reach = R
     while not New.is_false():
@@ -99,11 +97,11 @@ def post_reach(R):
     return Reach
 
 
-def desimbolify(sym_trace: List[pynusmv.dd.BDD]) -> List[pynusmv.dd.State]:
+def desimbolify(model: pynusmv.fsm.BddFsm, sym_trace: List[pynusmv.dd.BDD]) -> List[pynusmv.dd.State]:
     """
     Return a list of states which corresponds to the trace
     """
-    model = pynusmv.glob.prop_database().master.bddFsm
+    # model = pynusmv.glob.prop_database().master.bddFsm
     if len(sym_trace) == 0:
         return []
 
@@ -115,16 +113,16 @@ def desimbolify(sym_trace: List[pynusmv.dd.BDD]) -> List[pynusmv.dd.State]:
 
     sym_trace[-1] = sym_trace[-1] & model.pre(target)
 
-    trace = desimbolify(sym_trace)
+    trace = desimbolify(model, sym_trace)
     trace.append(target)
     return trace
     
 
-def loop_interno(s: pynusmv.dd.State, G: pynusmv.dd.BDD , Recur: pynusmv.dd.BDD) -> List[pynusmv.dd.State]:
+def partial_loop_trace(model: pynusmv.fsm.BddFsm, s: pynusmv.dd.State, G: pynusmv.dd.BDD , Recur: pynusmv.dd.BDD) -> List[pynusmv.dd.State]:
     """
     Return a list of consecutive states starting in s and ending in Recur. Avoids G.
     """
-    model = pynusmv.glob.prop_database().master.bddFsm
+    # model = pynusmv.glob.prop_database().master.bddFsm
     new = model.post(s) - G
     regions_trace = [s, new]
     reach = new
@@ -133,25 +131,22 @@ def loop_interno(s: pynusmv.dd.State, G: pynusmv.dd.BDD , Recur: pynusmv.dd.BDD)
         regions_trace.append(new)
         reach = reach + new
     regions_trace[-1] = regions_trace[-1] & Recur
-    return desimbolify(regions_trace)
+    return desimbolify(model, regions_trace)
 
 
-def loop_esterno(Recur, G):
-    model = pynusmv.glob.prop_database().master.bddFsm
+def loop_trace(model: pynusmv.fsm.BddFsm, Recur: pynusmv.dd.BDD, G: pynusmv.dd.BDD) -> List[pynusmv.dd.State]:
     s = model.pick_one_state(Recur)
-    trace = loop_interno(s, G, Recur)
+    trace = partial_loop_trace(model, s, G, Recur)
     t = trace.pop()
     while t not in trace:
-        trace = trace + loop_interno(t, G, Recur)
+        trace = trace + partial_loop_trace(model, t, G, Recur)
         t = trace.pop()
     trace.append(t)
     return trace # TODO: ritorna a partire da t
 
 
-def boh(s):
-    model = pynusmv.glob.prop_database().master.bddFsm
+def init_to_s_trace(model: pynusmv.fsm.BddFsm, s: pynusmv.dd.State) -> List[pynusmv.dd.State]:
     init = model.init
-
     New = init
     Reach = init
     trace = [New]
@@ -160,15 +155,13 @@ def boh(s):
         Reach = Reach + New
         trace.append(New)
     trace[-1] = s & New
-    return desimbolify(trace)
+    return desimbolify(model, trace)
 
 
 
-def create_trace(Recur : pynusmv.dd.BDD, G):
-    model = pynusmv.glob.prop_database().master.bddFsm
-
-    trace = loop_esterno(Recur, G)
-    trace = boh(trace[-1])[:-1] + trace
+def create_trace(model: pynusmv.fsm.BddFsm, Recur: pynusmv.dd.BDD, G: pynusmv.dd.BDD) -> List[pynusmv.dd.State]:
+    trace = loop_trace(model, Recur, G)
+    trace = init_to_s_trace(model, trace[-1])[:-1] + trace
     
     return trace
 
@@ -205,7 +198,7 @@ def check_react_spec(spec):
     F = spec_to_bdd(model, res[0])
     G = spec_to_bdd(model, res[1])
 
-    Reach = post_reach(model.init)                            # trovare reach
+    Reach = post_reach(model, model.init)                            # trovare reach
     F = (F & Reach) - G
 
     '''
@@ -242,10 +235,8 @@ def check_react_spec(spec):
 
         while not New.is_false():
             PreReach = PreReach | New
-            # assert ((Recur <= PreReach) == Recur.entailed(PreReach))
-            # assert ((Recur <= PreReach) == ((Recur & PreReach) == Recur))
             if Recur <= PreReach:
-                trace = create_trace(Recur, G)
+                trace = create_trace(model, Recur, G)
                 full_trace = create_trace_inputs(model, trace)
                 return False, full_trace                 # Recur won't change: F repeatable
 
