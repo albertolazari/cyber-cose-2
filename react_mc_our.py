@@ -140,6 +140,8 @@ def loop_trace(model: pynusmv.fsm.BddFsm, Recur: pynusmv.dd.BDD, G: pynusmv.dd.B
         trace = trace + partial_loop_trace(model, t, G, Recur)
         t = trace.pop()
     trace.append(t)
+    while trace[0] != t:
+        trace = trace[1:]
     return trace
 
 
@@ -158,10 +160,9 @@ def init_to_s_trace(model: pynusmv.fsm.BddFsm, s: pynusmv.dd.State) -> List[pynu
 
 
 def create_trace(model: pynusmv.fsm.BddFsm, Recur: pynusmv.dd.BDD, G: pynusmv.dd.BDD) -> List[pynusmv.dd.State]:
-    trace = loop_trace(model, Recur, G)
-    trace = init_to_s_trace(model, trace[-1])[:-1] + trace
-    
-    return trace
+    loop = loop_trace(model, Recur, G)
+    handle = init_to_s_trace(model, loop[0])[:-1]
+    return handle + loop
 
 
 def create_trace_inputs(model: pynusmv.fsm.BddFsm, trace: List[pynusmv.dd.State]):
@@ -173,8 +174,8 @@ def create_trace_inputs(model: pynusmv.fsm.BddFsm, trace: List[pynusmv.dd.State]
 
     for state in trace:
         if prev is not None:
-            input = model.get_inputs_between_states(prev, state)
-            s = model.pick_one_inputs(input).get_str_values() if not input.is_false() else {}
+            inputs = model.get_inputs_between_states(prev, state)
+            s = model.pick_one_inputs(inputs).get_str_values()
             full_trace.append(s)
         full_trace.append(state.get_str_values())
         prev = state
@@ -264,7 +265,7 @@ for prop in pynusmv.glob.prop_database():
     res = check_react_spec(spec)
     if res == None:
         print('Property is not a GR(1) formula, skipping')
-    if res[0] == True:
+    elif res[0] == True:
         print("Property is respected")
     elif res[0] == False:
         print("Property is not respected")
