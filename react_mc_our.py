@@ -201,23 +201,6 @@ def check_react_spec(spec):
     Reach = post_reach(model, model.init)                  
     F = (F & Reach) - G
 
-    '''
-    Recur := Intersect(Reach, F) // Potential candidates for cycle
-    while not IsEmpty(Recur) do // Iterate on Recur_i
-        PreReach := empty // States that can reach Recur_i in ≥ 1 steps
-        New := Pre(Recur, Trans) // Ensure at least one transition
-        while not IsEmpty(New) do
-            PreReach := Union(PreReach, New)
-            if IsSubset(Recur, PreReach) then
-                return True // Recur won't change: F repeatable
-            end if
-            New := Diff(Diff(Pre(New, Trans), PreReach), G)
-        end while
-        Recur := Intersect(Recur, PreReach) // Recur_i+1
-    end while
-    return False // No execution with F repeating
-    '''
-
     Recur = F                               # Potential candidates for cycle
     while not Recur.is_false():             # Iterate on Recur_i
         # This is what we would like to do
