@@ -121,7 +121,6 @@ def partial_loop_trace(model: pynusmv.fsm.BddFsm, s: pynusmv.dd.State, G: pynusm
     """
     Return a list of consecutive states starting in s and ending in Recur. Avoids G.
     """
-    # model = pynusmv.glob.prop_database().master.bddFsm
     new = model.post(s) - G
     regions_trace = [s, new]
     reach = new
