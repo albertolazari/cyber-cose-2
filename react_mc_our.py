@@ -201,12 +201,15 @@ def check_react_spec(spec):
     Reach = post_reach(model, model.init)                  
     F = (F & Reach) - G
 
-    Recur = F                               # Potential candidates for cycle
-    while not Recur.is_false():             # Iterate on Recur_i
-        # This is what we would like to do
-        PreReach = pynusmv.dd.BDD.false()   # States that can reach Recur_i in ≥ 1 steps
+    # Potential candidates for cycle
+    Recur = F
+    # Iterate on Recur_i
+    while not Recur.is_false():
+        # States that can reach Recur_i in ≥ 1 steps
+        PreReach = pynusmv.dd.BDD.false()
 
-        New = model.pre(Recur) - G              # Ensure at least one transition
+        # Ensure at least one transition
+        New = model.pre(Recur) - G
         loop_trace = [New]
 
         while not New.is_false():
@@ -214,14 +217,17 @@ def check_react_spec(spec):
             if Recur <= PreReach:
                 trace = create_trace(model, Recur, G)
                 full_trace = create_trace_inputs(model, trace)
-                return False, full_trace                 # Recur won't change: F repeatable
+                # Recur won't change: F repeatable
+                return False, full_trace
 
             New = (model.pre(New) - G) - PreReach
             loop_trace.append(New)
 
-        Recur = Recur & PreReach # Recur_i+1
+        # Recur_i+1
+        Recur = Recur & PreReach 
 
-    return True, None # No execution with F repeating
+    # No execution with F repeating
+    return True, None 
 
 if len(sys.argv) != 2:
     print("Usage:", sys.argv[0], "filename.smv")
