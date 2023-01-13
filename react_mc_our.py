@@ -141,7 +141,7 @@ def loop_trace(model: pynusmv.fsm.BddFsm, Recur: pynusmv.dd.BDD, G: pynusmv.dd.B
         trace = trace + partial_loop_trace(model, t, G, Recur)
         t = trace.pop()
     trace.append(t)
-    return trace # TODO: ritorna a partire da t
+    return trace
 
 
 def init_to_s_trace(model: pynusmv.fsm.BddFsm, s: pynusmv.dd.State) -> List[pynusmv.dd.State]:
