@@ -196,7 +196,8 @@ def check_react_spec(spec):
     F = spec_to_bdd(model, res[0])
     G = spec_to_bdd(model, res[1])
 
-    Reach = post_reach(model, model.init)                            # trovare reach
+    # trovare reach
+    Reach = post_reach(model, model.init)                  
     F = (F & Reach) - G
 
     '''
