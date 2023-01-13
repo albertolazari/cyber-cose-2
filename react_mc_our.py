@@ -218,13 +218,6 @@ def check_react_spec(spec):
     return False // No execution with F repeating
     '''
 
-    # a + b and a | b compute the disjunction of a and b
-    # a * b and a & b compute the conjunction of a and b
-    # ~a and -a compute the negation of a
-    # a - b computes a & ~b
-    # a ^ b computes the exclusive-OR (XOR) of a and b
-    # a == b, a <= b, a < b, a > b and a >= b compare a and b
-
     Recur = F                               # Potential candidates for cycle
     while not Recur.is_false():             # Iterate on Recur_i
         # This is what we would like to do
