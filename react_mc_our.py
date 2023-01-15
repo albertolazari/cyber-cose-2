@@ -26,6 +26,7 @@ def spec_to_bdd(model, spec):
     bddspec = pynusmv.mc.eval_simple_expression(model, str(spec))
     return bddspec
 
+
 def is_boolean_formula(spec):
     """
     Given a formula `spec`, checks if the formula is a boolean combination of base
@@ -38,6 +39,7 @@ def is_boolean_formula(spec):
     if spec.type in booleanOp:
         return is_boolean_formula(spec.car) and is_boolean_formula(spec.cdr)
     return False
+
 
 def check_GF_formula(spec):
     """
@@ -55,6 +57,7 @@ def check_GF_formula(spec):
         return spec.car
     else:
         return None
+
 
 def parse_react(spec):
     """
@@ -115,7 +118,7 @@ def desimbolify(model: pynusmv.fsm.BddFsm, sym_trace: List[pynusmv.dd.BDD]) -> L
     trace = desimbolify(model, sym_trace)
     trace.append(target)
     return trace
-    
+
 
 def partial_loop_trace(model: pynusmv.fsm.BddFsm, s: pynusmv.dd.State, G: pynusmv.dd.BDD , Recur: pynusmv.dd.BDD) -> List[pynusmv.dd.State]:
     """
@@ -158,7 +161,6 @@ def init_to_s_trace(model: pynusmv.fsm.BddFsm, s: pynusmv.dd.State) -> List[pynu
     return desimbolify(model, trace)
 
 
-
 def create_trace(model: pynusmv.fsm.BddFsm, Recur: pynusmv.dd.BDD, G: pynusmv.dd.BDD) -> List[pynusmv.dd.State]:
     loop = loop_trace(model, Recur, G)
     handle = init_to_s_trace(model, loop[0])[:-1]
@@ -198,7 +200,7 @@ def check_react_spec(spec):
     G = spec_to_bdd(model, res[1])
 
     # trovare reach
-    Reach = post_reach(model, model.init)                  
+    Reach = post_reach(model, model.init)
     F = (F & Reach) - G
 
     # Potential candidates for cycle
@@ -229,28 +231,30 @@ def check_react_spec(spec):
     # No execution with F repeating
     return True, None 
 
-if len(sys.argv) != 2:
-    print("Usage:", sys.argv[0], "filename.smv")
-    sys.exit(1)
 
-pynusmv.init.init_nusmv()
-filename = sys.argv[1]
-pynusmv.glob.load_from_file(filename)
-pynusmv.glob.compute_model()
-type_ltl = pynusmv.prop.propTypes['LTL']
-for prop in pynusmv.glob.prop_database():
-    spec = prop.expr
-    print(spec)
-    if prop.type != type_ltl:
-        print("property is not LTLSPEC, skipping")
-        continue
-    res = check_react_spec(spec)
-    if res == None:
-        print('Property is not a GR(1) formula, skipping')
-    elif res[0] == True:
-        print("Property is respected")
-    elif res[0] == False:
-        print("Property is not respected")
-        print("Counterexample:", res[1])
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage:", sys.argv[0], "filename.smv")
+        sys.exit(1)
 
-pynusmv.init.deinit_nusmv()
+    pynusmv.init.init_nusmv()
+    filename = sys.argv[1]
+    pynusmv.glob.load_from_file(filename)
+    pynusmv.glob.compute_model()
+    type_ltl = pynusmv.prop.propTypes['LTL']
+    for prop in pynusmv.glob.prop_database():
+        spec = prop.expr
+        print(spec)
+        if prop.type != type_ltl:
+            print("property is not LTLSPEC, skipping")
+            continue
+        res = check_react_spec(spec)
+        if res == None:
+            print('Property is not a GR(1) formula, skipping')
+        elif res[0] == True:
+            print("Property is respected")
+        elif res[0] == False:
+            print("Property is not respected")
+            print("Counterexample:", res[1])
+
+    pynusmv.init.deinit_nusmv()
