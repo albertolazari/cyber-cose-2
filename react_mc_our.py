@@ -120,7 +120,7 @@ def desimbolify(model: pynusmv.fsm.BddFsm, sym_trace: List[pynusmv.dd.BDD]) -> L
     return trace
 
 
-def partial_loop_trace(model: pynusmv.fsm.BddFsm, s: pynusmv.dd.State, G: pynusmv.dd.BDD , Recur: pynusmv.dd.BDD) -> List[pynusmv.dd.State]:
+def partial_loop_trace(model: pynusmv.fsm.BddFsm, s: pynusmv.dd.State, G: pynusmv.dd.BDD, Recur: pynusmv.dd.BDD) -> List[pynusmv.dd.State]:
     """
     Return a list of consecutive states starting in s and ending in Recur. Avoids G.
     """
