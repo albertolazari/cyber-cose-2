@@ -125,25 +125,25 @@ def partial_loop_trace(model: pynusmv.fsm.BddFsm, s: pynusmv.dd.State, G: pynusm
     Return a list of consecutive states starting in s and ending in Recur. Avoids G.
     """
     new = model.post(s) - G
-    regions_trace = [s, new]
+    sym_trace = [s, new]
     reach = new
     while not new.intersected(Recur):
         new = model.post(new) - reach - G
-        regions_trace.append(new)
+        sym_trace.append(new)
         reach = reach + new
-    regions_trace[-1] = regions_trace[-1] & Recur
-    return desimbolify(model, regions_trace)
+    sym_trace[-1] = sym_trace[-1] & Recur
+    return desimbolify(model, sym_trace)
 
 
 def loop_trace(model: pynusmv.fsm.BddFsm, Recur: pynusmv.dd.BDD, G: pynusmv.dd.BDD) -> List[pynusmv.dd.State]:
     s = model.pick_one_state(Recur)
     trace = partial_loop_trace(model, s, G, Recur)
-    t = trace.pop()
-    while t not in trace:
-        trace = trace + partial_loop_trace(model, t, G, Recur)
-        t = trace.pop()
-    trace.append(t)
-    while trace[0] != t:
+    s = trace.pop()
+    while s not in trace:
+        trace = trace + partial_loop_trace(model, s, G, Recur)
+        s = trace.pop()
+    trace.append(s)
+    while trace[0] != s:
         trace = trace[1:]
     return trace
 
