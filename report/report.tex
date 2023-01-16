@@ -2,7 +2,7 @@
 \usepackage[a4paper, text={6.5in,9in}]{geometry}
 % \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
-\graphicspath{ {immagini/} }
+\graphicspath{ {images/} }
 
 \usepackage{titling}
 
@@ -173,6 +173,15 @@ function check_react_spec:
     It stops as soon as it is able to reach a sub-region of $Recur$.
     Finally, it desimbolifies the trace it built and returns it.
     In doing so, the function is able to return a path starting in the given state and ending in $Recur$.
+
+    \begin{figure}[H] 
+        \centering
+        \includegraphics[width=0.6\textwidth]{partial_loop_trace.jpg}
+        \caption{Representation of the \texttt{partial\_loop\_trace} algorithm.}
+        \label{fig:partial_loop_trace}
+    \end{figure}
+
+    In Figure \ref{fig:partial_loop_trace} each red dot represents a state; each yellow region the region represented by $New$ at each iteration; each arrow represents one step.
             
     \paragraph*{\texttt{loop\_trace}}
     This function iteratively uses \texttt{partial\_loop\_trace} in order to build a loop starting and ending in $Recur$.
@@ -182,11 +191,30 @@ function check_react_spec:
     Lastly, it ``cleans'' the loop before retuning it.
     The loop could have a lasso shape so the function removes the leading subpath in order to return just a looping path.
     The loop is anyway granted to start inside $Recur$ since it's granted to end inside $Recur$.
-    
+
+    \begin{figure}[H] 
+        \centering
+        \includegraphics[width=0.6\textwidth]{loop_trace.jpg}
+        \caption{Representation of the \texttt{loop\_trace} algorithm.}
+        \label{fig:loop_trace}
+    \end{figure}
+   
+    In Figure \ref{fig:loop_trace} each red dot represents a state; each dotted arrow represents the result of a call to \texttt{partial\_loop\_trace}.
+    The last part of \texttt{loop\_trace} removes the subpath between \texttt{s\_0} and \texttt{s\_1}.
+
     \paragraph*{\texttt{init\_to\_s\_trace}}
     This function iteratively computes the reachable region from $Init$ until it finds a path to the given state.
     At each iteration it keeps track of the regions it's going through.
     Finally, it desimbolifies that list in order to return a path from a state in $Init$ to the given state.
+
+    \begin{figure}[H] 
+        \centering
+        \includegraphics[width=0.6\textwidth]{create_trace.jpg}
+        \caption{Representation of the \texttt{create\_trace} algorithm.}
+        \label{fig:create_trace}
+    \end{figure}
+
+    In Figure \ref{fig:create_trace} each red dot represents a state; the dotted path represents the result of a call to \texttt{loop\_trace}; the dashed arrow represents the result of a call to \texttt{init\_to\_s\_trace}.
 
     \subsection{Implementation}
     \begin{code}{function that finds a list of states starting from a given state in $Recur$ and ending in $Recur$.}
@@ -202,7 +230,6 @@ function partial_loop_trace(s, G, Recur):
     return desimbolify|$(SymTrace)$|
     \end{code}
 
-
     \begin{code}{function that finds a loop starting and ending in the same state in $Recur$.}
 function loop_trace(Recur, G):
     |$s \leftarrow$| pick_one_state|$(Recur)$|
@@ -216,7 +243,6 @@ function loop_trace(Recur, G):
         |$Trace \leftarrow Trace$|[1:]
     return |$Trace$|
     \end{code}
-
 
     \begin{code}{function that finds a list of states describing a path from $Init$ to a given state.}
 function init_to_s_trace(s):
