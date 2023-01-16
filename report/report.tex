@@ -207,12 +207,12 @@ function partial_loop_trace(s, G, Recur):
 function loop_trace(Recur, G):
     |$s \leftarrow$| pick_one_state|$(Recur)$|
     |$Trace \leftarrow$| partial_loop_trace|$(s, G, Recur)$|
-    |$t \leftarrow Trace$|.pop|$()$|
-    while |$t$| not in |$Trace$|:
-        |$Trace \leftarrow Trace$| + partial_loop_trace|$(t, G, Recur)$|
-        |$t \leftarrow Trace$|.pop|$()$|
-    |$Trace \leftarrow Trace$| + |$t$|
-    while |$Trace$|[0]|$ \neq t$|:
+    |$s \leftarrow Trace$|.pop|$()$|
+    while |$s$| not in |$Trace$|:
+        |$Trace \leftarrow Trace$| + partial_loop_trace|$(s, G, Recur)$|
+        |$s \leftarrow Trace$|.pop|$()$|
+    |$Trace \leftarrow Trace$| + |$s$|
+    while |$Trace$|[0]|$ \neq s$|:
         |$Trace \leftarrow Trace$|[1:]
     return |$Trace$|
     \end{code}
